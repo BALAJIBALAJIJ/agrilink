@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import SmartFarmIntelligence from '../../components/farmer/SmartFarmIntelligence';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
@@ -12,6 +13,7 @@ export default function FarmerDashboard() {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [farmLocation, setFarmLocation] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,12 +22,18 @@ export default function FarmerDashboard() {
 
   const loadData = async () => {
     try {
-      const [prodRes, orderRes] = await Promise.allSettled([
+      const [prodRes, orderRes, profileRes] = await Promise.allSettled([
         api.get(`/products/farmer/${user.userId}`),
         api.get('/orders/farmer?page=0&size=5'),
+        api.get('/profile/me'),
       ]);
       if (prodRes.status === 'fulfilled') setProducts(prodRes.value.data.data || []);
       if (orderRes.status === 'fulfilled') setOrders(orderRes.value.data.data?.content || []);
+      if (profileRes.status === 'fulfilled') {
+        const profileData = profileRes.value.data.data;
+        const farmerProfile = profileData?.[1];
+        if (farmerProfile?.farmLocation) setFarmLocation(farmerProfile.farmLocation);
+      }
     } catch {} finally { setLoading(false); }
   };
 
@@ -138,6 +146,9 @@ export default function FarmerDashboard() {
             </div>
           )}
         </div>
+
+        {/* Smart Farm Intelligence Section */}
+        <SmartFarmIntelligence farmLocation={farmLocation} />
       </div>
     </div>
   );

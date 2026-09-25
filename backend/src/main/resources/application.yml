@@ -59,6 +59,15 @@ app:
   backend:
     url: ${BACKEND_URL:http://localhost:8080}
 
+# Smart Farm Intelligence
+agrilink:
+  market:
+    api-key: ${MARKET_API_KEY:}
+  ml:
+    service-url: ${ML_SERVICE_URL:}
+  ai:
+    api-key: ${AI_API_KEY:}
+
 logging:
   level:
     com.agrilink: DEBUG
