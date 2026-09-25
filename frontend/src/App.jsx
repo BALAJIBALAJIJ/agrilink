@@ -23,6 +23,7 @@ const FarmerDashboard = lazy(() => import('./pages/farmer/FarmerDashboard'));
 const FarmerProducts = lazy(() => import('./pages/farmer/FarmerProducts'));
 const CreateProduct = lazy(() => import('./pages/farmer/CreateProduct'));
 const FarmerOrders = lazy(() => import('./pages/farmer/FarmerOrders'));
+const FarmerProfilePage = lazy(() => import('./pages/farmer/FarmerProfilePage'));
 
 const BuyerDashboard = lazy(() => import('./pages/buyer/BuyerDashboard'));
 const BuyerOrders = lazy(() => import('./pages/buyer/BuyerOrders'));
@@ -92,6 +93,9 @@ function App() {
           } />
           <Route path="/farmer/orders" element={
             <ProtectedRoute roles={['FARMER']}><FarmerOrders /></ProtectedRoute>
+          } />
+          <Route path="/farmer/profile" element={
+            <ProtectedRoute roles={['FARMER']}><FarmerProfilePage /></ProtectedRoute>
           } />
           <Route path="/farmer/*" element={
             <ProtectedRoute roles={['FARMER']}><FarmerDashboard /></ProtectedRoute>
