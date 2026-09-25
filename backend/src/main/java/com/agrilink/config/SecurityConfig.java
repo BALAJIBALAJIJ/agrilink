@@ -53,6 +53,9 @@ public class SecurityConfig {
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
+                        // Smart Farm (accessible to all authenticated users)
+                        .requestMatchers("/api/farmer/smart/**").authenticated()
+
                         // Farmer endpoints
                         .requestMatchers("/api/farmer/**").hasRole("FARMER")
 
