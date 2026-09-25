@@ -68,7 +68,7 @@ export default function Navbar() {
             {[
               { to: '/', label: t('nav.home') },
               { to: '/how-it-works', label: t('nav.howItWorks') },
-              { to: '/market', label: t('nav.marketplace') },
+              ...(user?.role !== 'TRANSPORTER' ? [{ to: '/market', label: t('nav.marketplace') }] : []),
               { to: '/about', label: t('nav.about') },
             ].map((link) => (
               <Link
@@ -185,7 +185,7 @@ export default function Navbar() {
               {[
                 { to: '/', label: t('nav.home') },
                 { to: '/how-it-works', label: t('nav.howItWorks') },
-                { to: '/market', label: t('nav.marketplace') },
+                ...(user?.role !== 'TRANSPORTER' ? [{ to: '/market', label: t('nav.marketplace') }] : []),
                 { to: '/about', label: t('nav.about') },
               ].map(link => (
                 <Link key={link.to} to={link.to} className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">

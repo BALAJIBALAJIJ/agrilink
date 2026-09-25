@@ -81,4 +81,31 @@ public class TransportController {
         transportService.toggleDuty(user.getId());
         return ResponseEntity.ok(ApiResponse.success("Duty status toggled"));
     }
+
+    @GetMapping("/duty/status")
+    public ResponseEntity<ApiResponse> getDutyStatus(@AuthenticationPrincipal User user) {
+        boolean dutyOn = transportService.isDutyOn(user.getId());
+        return ResponseEntity.ok(ApiResponse.success("Duty status", Map.of("dutyOn", dutyOn)));
+    }
+
+    @GetMapping("/active-delivery")
+    public ResponseEntity<ApiResponse> getActiveDelivery(@AuthenticationPrincipal User user) {
+        TransportRequest active = transportService.getActiveDelivery(user.getId());
+        return ResponseEntity.ok(ApiResponse.success("Active delivery", active));
+    }
+
+    @PostMapping("/requests/{id}/gps")
+    public ResponseEntity<ApiResponse> updateGps(
+            @AuthenticationPrincipal User user,
+            @PathVariable String id,
+            @RequestBody Map<String, Object> body) {
+        transportService.updateGpsLocation(
+                user.getId(), id,
+                ((Number) body.get("latitude")).doubleValue(),
+                ((Number) body.get("longitude")).doubleValue(),
+                body.containsKey("speed") ? ((Number) body.get("speed")).doubleValue() : 0,
+                body.containsKey("heading") ? ((Number) body.get("heading")).doubleValue() : 0
+        );
+        return ResponseEntity.ok(ApiResponse.success("GPS updated"));
+    }
 }

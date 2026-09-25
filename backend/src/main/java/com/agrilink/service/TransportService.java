@@ -284,6 +284,18 @@ public class TransportService {
         transporterProfileRepository.save(profile);
     }
 
+    public boolean isDutyOn(String transporterId) {
+        return transporterProfileRepository.findByUserId(transporterId)
+                .map(TransporterProfile::isDutyOn)
+                .orElse(false);
+    }
+
+    public TransportRequest getActiveDelivery(String transporterId) {
+        TransporterProfile profile = transporterProfileRepository.findByUserId(transporterId).orElse(null);
+        if (profile == null || !profile.isCurrentlyOnDelivery() || profile.getActiveDeliveryId() == null) return null;
+        return transportRequestRepository.findById(profile.getActiveDeliveryId()).orElse(null);
+    }
+
     private void calculateRoute(TransportRequest request) {
         try {
             if (request.getPickupLocation() == null || request.getDeliveryLocation() == null) return;

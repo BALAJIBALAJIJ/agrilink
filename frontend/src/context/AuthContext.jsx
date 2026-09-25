@@ -68,6 +68,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem('agrilink_token');
     localStorage.removeItem('agrilink_user');
+    localStorage.removeItem('agrilink_duty_status'); // Clear duty on logout
     setUser(null);
   }, []);
 

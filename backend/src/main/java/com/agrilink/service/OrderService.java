@@ -6,16 +6,19 @@ import com.agrilink.model.*;
 import com.agrilink.model.enums.*;
 import com.agrilink.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
@@ -23,6 +26,8 @@ public class OrderService {
     private final UserRepository userRepository;
     private final FarmerProfileRepository farmerProfileRepository;
     private final BuyerProfileRepository buyerProfileRepository;
+    private final TransportRequestRepository transportRequestRepository;
+    private final TransporterProfileRepository transporterProfileRepository;
     private final NotificationService notificationService;
 
     private static final AtomicLong orderCounter = new AtomicLong(System.currentTimeMillis() % 10000);
@@ -69,8 +74,8 @@ public class OrderService {
                 .productTotal(productTotal)
                 .pickupLocation(product.getFarmLocation())
                 .deliveryLocation(request.getDeliveryLocation())
-                .status(OrderStatus.PENDING_PAYMENT)
-                .paymentStatus(PaymentStatus.PENDING)
+                .status(OrderStatus.READY_FOR_PICKUP) // Cash on Delivery - skip payment
+                .paymentStatus(PaymentStatus.COD) // Cash on Delivery
                 .totalAmount(productTotal) // Transport charge added later
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -87,11 +92,55 @@ public class OrderService {
 
         // Notify farmer
         notificationService.createNotification(product.getFarmerId(),
-                "New Order Received",
+                "New Order Received (Cash on Delivery)",
                 "New order #" + orderId + " for " + request.getQuantity() + "kg of " + product.getVegetableName(),
                 "ORDER", order.getId(), "ORDER");
 
+        // AUTO-CREATE TRANSPORT REQUEST immediately
+        try {
+            autoCreateTransportRequest(order);
+        } catch (Exception e) {
+            log.warn("Auto transport request failed, manual trigger needed: {}", e.getMessage());
+        }
+
         return order;
+    }
+
+    private void autoCreateTransportRequest(Order order) {
+        TransportRequest transportReq = TransportRequest.builder()
+                .orderId(order.getId())
+                .farmerId(order.getFarmerId())
+                .farmerName(order.getFarmerName())
+                .buyerId(order.getBuyerId())
+                .buyerName(order.getBuyerName())
+                .productName(order.getProductName())
+                .quantity(order.getQuantity())
+                .requiredCapacity(order.getQuantity())
+                .pickupLocation(order.getPickupLocation())
+                .deliveryLocation(order.getDeliveryLocation())
+                .status(TransportStatus.REQUESTED)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        transportReq = transportRequestRepository.save(transportReq);
+
+        order.setStatus(OrderStatus.TRANSPORT_REQUESTED);
+        order.setTransportRequestId(transportReq.getId());
+        orderRepository.save(order);
+
+        // Notify eligible transporters
+        List<TransporterProfile> available = transporterProfileRepository
+                .findByDutyOnTrueAndCurrentlyOnDeliveryFalse();
+        for (TransporterProfile profile : available) {
+            User transporter = userRepository.findById(profile.getUserId()).orElse(null);
+            if (transporter != null && transporter.getVerificationStatus() == VerificationStatus.APPROVED) {
+                notificationService.createNotification(profile.getUserId(),
+                        "🚛 New Delivery Available!",
+                        order.getQuantity() + "kg " + order.getProductName() + " - Cash on Delivery",
+                        "TRANSPORT", transportReq.getId(), "TRANSPORT_REQUEST");
+            }
+        }
     }
 
     public Order getOrder(String orderId) {
