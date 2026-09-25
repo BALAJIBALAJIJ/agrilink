@@ -114,4 +114,19 @@ public class AdminController {
         Page<AuditLog> logs = adminService.getAuditLogs(PageRequest.of(page, size));
         return ResponseEntity.ok(ApiResponse.success("Audit logs retrieved", logs));
     }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<ApiResponse> deleteUser(
+            @AuthenticationPrincipal User admin,
+            @PathVariable String id) {
+        adminService.deleteUser(admin.getId(), id);
+        return ResponseEntity.ok(ApiResponse.success("User deleted", null));
+    }
+
+    @DeleteMapping("/users/clear-all")
+    public ResponseEntity<ApiResponse> clearAllNonAdminUsers(
+            @AuthenticationPrincipal User admin) {
+        int count = adminService.clearAllNonAdminUsers(admin.getId());
+        return ResponseEntity.ok(ApiResponse.success("Cleared " + count + " non-admin users", count));
+    }
 }

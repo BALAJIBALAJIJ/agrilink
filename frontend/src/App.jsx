@@ -17,6 +17,7 @@ const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const AdminLoginPage = lazy(() => import('./pages/auth/AdminLoginPage'));
 const ProfileCompletePage = lazy(() => import('./pages/auth/ProfileCompletePage'));
+const PendingApprovalPage = lazy(() => import('./pages/auth/PendingApprovalPage'));
 
 const FarmerDashboard = lazy(() => import('./pages/farmer/FarmerDashboard'));
 const FarmerProducts = lazy(() => import('./pages/farmer/FarmerProducts'));
@@ -74,6 +75,9 @@ function App() {
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/profile/complete" element={
             <ProtectedRoute><ProfileCompletePage /></ProtectedRoute>
+          } />
+          <Route path="/pending-approval" element={
+            <ProtectedRoute><PendingApprovalPage /></ProtectedRoute>
           } />
 
           {/* Farmer Routes */}

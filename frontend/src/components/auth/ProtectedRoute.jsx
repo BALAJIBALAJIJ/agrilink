@@ -10,9 +10,18 @@ export default function ProtectedRoute({ children, roles }) {
     return <Navigate to="/auth/login" replace />;
   }
 
-  // Check profile completion
-  if (!user.profileCompleted && !window.location.pathname.includes('/profile/complete')) {
+  // Check profile completion first
+  if (!user.profileCompleted && !window.location.pathname.includes('/profile/complete')
+      && !window.location.pathname.includes('/pending-approval')) {
     return <Navigate to="/profile/complete" replace />;
+  }
+
+  // Check if account is pending admin approval (profile completed but not approved)
+  if (user.profileCompleted && user.verificationStatus === 'PENDING_VERIFICATION'
+      && !window.location.pathname.includes('/pending-approval')
+      && !window.location.pathname.includes('/profile/complete')
+      && user.role !== 'ADMIN') {
+    return <Navigate to="/pending-approval" replace />;
   }
 
   // Check role authorization

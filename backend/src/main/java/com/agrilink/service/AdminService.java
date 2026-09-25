@@ -151,4 +151,24 @@ public class AdminService {
                 .build();
         auditLogRepository.save(log);
     }
+
+    public void deleteUser(String adminId, String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (user.getRole() == UserRole.ADMIN) {
+            throw new BadRequestException("Cannot delete admin user");
+        }
+        userRepository.delete(user);
+        createAuditLog(adminId, "DELETE_USER", "USER", userId, "Deleted user: " + user.getFullName());
+    }
+
+    public int clearAllNonAdminUsers(String adminId) {
+        List<User> nonAdmins = userRepository.findAll().stream()
+                .filter(u -> u.getRole() != UserRole.ADMIN)
+                .toList();
+        int count = nonAdmins.size();
+        userRepository.deleteAll(nonAdmins);
+        createAuditLog(adminId, "CLEAR_ALL_USERS", "SYSTEM", "", "Cleared " + count + " non-admin users");
+        return count;
+    }
 }
