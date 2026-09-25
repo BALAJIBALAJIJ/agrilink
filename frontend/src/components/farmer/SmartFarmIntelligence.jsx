@@ -45,13 +45,50 @@ function DataCard({ title, icon, children, status, source, retrievedAt }) {
   );
 }
 
+function FarmMap({ lat, lon, weather }) {
+  const weatherEmoji = weather?.weatherCondition?.includes('Rain') ? '🌧️' :
+    weather?.weatherCondition?.includes('Cloud') ? '☁️' :
+    weather?.weatherCondition?.includes('Thunder') ? '⛈️' :
+    weather?.weatherCondition?.includes('Fog') ? '🌫️' : '☀️';
+
+  return (
+    <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+      <iframe
+        title="Farm Location"
+        width="100%"
+        height="280"
+        style={{ border: 0 }}
+        src={`https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.05}%2C${lat-0.05}%2C${lon+0.05}%2C${lat+0.05}&layer=mapnik&marker=${lat}%2C${lon}`}
+        loading="lazy"
+      />
+      <div className="bg-white px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">{weatherEmoji}</span>
+          <div>
+            <p className="text-sm font-bold text-gray-900">
+              {weather?.temperature != null ? `${weather.temperature}°C` : '--'}
+              {weather?.humidity != null && <span className="text-gray-500 font-normal"> • {weather.humidity}% humidity</span>}
+            </p>
+            <p className="text-xs text-gray-500">{weather?.weatherCondition || 'Loading...'}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] text-gray-400">📍 {lat.toFixed(4)}, {lon.toFixed(4)}</p>
+          {weather?.windSpeed != null && (
+            <p className="text-[10px] text-gray-400">💨 Wind: {weather.windSpeed} km/h</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SmartFarmIntelligence({ farmLocation }) {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(false);
-  const [commodity, setCommodity] = useState('Tomato');
 
   const lat = farmLocation?.latitude || 0;
   const lon = farmLocation?.longitude || 0;
@@ -60,17 +97,17 @@ export default function SmartFarmIntelligence({ farmLocation }) {
     if (lat !== 0 && lon !== 0) {
       loadSmartData();
     }
-  }, [lat, lon, commodity]);
+  }, [lat, lon]);
 
   const loadSmartData = async () => {
     setLoading(true);
     setError(null);
     try {
       const lang = user?.preferredLanguage || 'en';
-      const res = await api.get(`/farmer/smart/summary?lat=${lat}&lon=${lon}&commodity=${encodeURIComponent(commodity)}&lang=${lang}`);
+      const res = await api.get(`/farmer/smart/summary?lat=${lat}&lon=${lon}&lang=${lang}`);
       setData(res.data.data);
     } catch (err) {
-      setError('Failed to load smart farming data');
+      setError('Failed to load smart farming data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -78,8 +115,10 @@ export default function SmartFarmIntelligence({ farmLocation }) {
 
   if (lat === 0 && lon === 0) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 text-center">
-        <p className="text-yellow-700">📍 Set your farm location in your profile to get Smart Farm Intelligence</p>
+      <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-2xl p-6 text-center">
+        <span className="text-4xl">📍</span>
+        <p className="text-yellow-700 mt-2 font-medium">Set your farm location in your profile to get Smart Farm Intelligence</p>
+        <p className="text-yellow-600 text-sm mt-1">Go to Profile → Update your farm GPS location</p>
       </div>
     );
   }
@@ -99,71 +138,81 @@ export default function SmartFarmIntelligence({ farmLocation }) {
 
   return (
     <motion.div initial="hidden" animate="visible" variants={fadeUp} className="mt-8">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             🧠 Smart Farm Intelligence
           </h2>
-          <p className="text-sm text-gray-500 mt-1">Real-time data from verified sources</p>
+          <p className="text-sm text-gray-500 mt-1">Real-time data from verified external sources • AI-powered insights</p>
         </div>
-        <div className="flex items-center gap-3">
-          <select value={commodity} onChange={e => setCommodity(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
-            {['Tomato', 'Onion', 'Potato', 'Brinjal', 'Cauliflower', 'Cabbage', 'Chilli', 'Carrot', 'Beans', 'Lady Finger'].map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <button onClick={loadSmartData} disabled={loading}
-            className="text-sm bg-agri-green text-white px-4 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50">
-            {loading ? '⏳' : '🔄'} Refresh
-          </button>
-        </div>
+        <button onClick={loadSmartData} disabled={loading}
+          className="text-sm bg-agri-green text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-all flex items-center gap-1">
+          {loading ? <span className="animate-spin">⏳</span> : '🔄'} Refresh
+        </button>
       </div>
 
+      {/* Loading State */}
       {loading && !data && (
-        <div className="text-center py-12">
-          <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Fetching smart farming data...</p>
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Fetching real-time farm data...</p>
+          <p className="text-gray-400 text-sm mt-1">Weather • Climate • Soil • Market • AI Analysis</p>
         </div>
       )}
 
-      {error && <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm mb-4">{error}</div>}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm mb-4 flex items-center gap-2">
+          ⚠️ {error}
+          <button onClick={loadSmartData} className="ml-auto text-red-600 underline text-xs">Retry</button>
+        </div>
+      )}
 
       {data && (
         <>
+          {/* Farm Location Map with Weather Overlay */}
+          <div className="mb-6">
+            <FarmMap lat={lat} lon={lon} weather={wd} />
+          </div>
+
           {/* Row 1: Weather + Climate + Soil */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <DataCard title="Current Weather" icon="🌤️" status={weather?.status} source={weather?.source} retrievedAt={weather?.retrievedAt}>
               {wd ? (
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-sm"><span className="text-gray-500">Temperature</span><span className="font-semibold">{wd.temperature}°C</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-gray-500">Feels Like</span><span className="font-semibold">{wd.apparentTemperature}°C</span></div>
                   <div className="flex justify-between text-sm"><span className="text-gray-500">Humidity</span><span className="font-semibold">{wd.humidity}%</span></div>
                   <div className="flex justify-between text-sm"><span className="text-gray-500">Rain</span><span className="font-semibold">{wd.rain} mm</span></div>
                   <div className="flex justify-between text-sm"><span className="text-gray-500">Wind</span><span className="font-semibold">{wd.windSpeed} km/h</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-gray-500">Pressure</span><span className="font-semibold">{wd.pressure} hPa</span></div>
                   <div className="flex justify-between text-sm"><span className="text-gray-500">Condition</span><span className="font-semibold">{wd.weatherCondition}</span></div>
                 </div>
               ) : <p className="text-gray-400 text-sm">Data currently unavailable</p>}
             </DataCard>
 
-            <DataCard title="30-Day Climate" icon="📊" status={climate?.status} source={climate?.source} retrievedAt={climate?.retrievedAt}>
+            <DataCard title="30-Day Climate History" icon="📊" status={climate?.status} source={climate?.source} retrievedAt={climate?.retrievedAt}>
               {cd ? (
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-sm"><span className="text-gray-500">Avg Temp</span><span className="font-semibold">{cd.avgTemperature}°C</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-gray-500">Max Temp</span><span className="font-semibold">{cd.avgMaxTemp}°C</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-gray-500">Min Temp</span><span className="font-semibold">{cd.avgMinTemp}°C</span></div>
                   <div className="flex justify-between text-sm"><span className="text-gray-500">Total Rain</span><span className="font-semibold">{cd.totalRainfall} mm</span></div>
                   <div className="flex justify-between text-sm"><span className="text-gray-500">Avg Humidity</span><span className="font-semibold">{cd.avgHumidity}%</span></div>
                   <div className="flex justify-between text-sm"><span className="text-gray-500">Solar Rad.</span><span className="font-semibold">{cd.avgSolarRadiation} MJ/m²</span></div>
-                  <p className="text-[10px] text-gray-400">{cd.period}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">{cd.period}</p>
                 </div>
               ) : <p className="text-gray-400 text-sm">Data currently unavailable</p>}
             </DataCard>
 
-            <DataCard title="Soil Information" icon="🌱" status={soil?.status} source={soil?.source} retrievedAt={soil?.retrievedAt}>
+            <DataCard title="Soil Analysis" icon="🌱" status={soil?.status} source={soil?.source} retrievedAt={soil?.retrievedAt}>
               {sd ? (
                 <div className="space-y-1.5">
-                  {sd.pH && <div className="flex justify-between text-sm"><span className="text-gray-500">pH</span><span className="font-semibold">{sd.pH.value}</span></div>}
+                  {sd.pH && <div className="flex justify-between text-sm"><span className="text-gray-500">pH Level</span><span className="font-semibold">{sd.pH.value}</span></div>}
                   {sd.organicCarbon && <div className="flex justify-between text-sm"><span className="text-gray-500">Organic Carbon</span><span className="font-semibold">{sd.organicCarbon.value} {sd.organicCarbon.unit}</span></div>}
                   {sd.clay && <div className="flex justify-between text-sm"><span className="text-gray-500">Clay</span><span className="font-semibold">{sd.clay.value} {sd.clay.unit}</span></div>}
                   {sd.sand && <div className="flex justify-between text-sm"><span className="text-gray-500">Sand</span><span className="font-semibold">{sd.sand.value} {sd.sand.unit}</span></div>}
+                  {sd.silt && <div className="flex justify-between text-sm"><span className="text-gray-500">Silt</span><span className="font-semibold">{sd.silt.value} {sd.silt.unit}</span></div>}
                   {sd.nitrogen && <div className="flex justify-between text-sm"><span className="text-gray-500">Nitrogen</span><span className="font-semibold">{sd.nitrogen.value} {sd.nitrogen.unit}</span></div>}
                 </div>
               ) : <p className="text-gray-400 text-sm">Data currently unavailable</p>}
@@ -172,42 +221,43 @@ export default function SmartFarmIntelligence({ farmLocation }) {
 
           {/* Row 2: Market + Groundwater */}
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
-            <DataCard title={`Market Price — ${commodity}`} icon="💹" status={market?.status} source={market?.source} retrievedAt={market?.retrievedAt}>
+            <DataCard title="Government Market Prices" icon="💹" status={market?.status} source={market?.source} retrievedAt={market?.retrievedAt}>
               {md && md.markets && md.markets.length > 0 ? (
-                <div className="space-y-2 max-h-40 overflow-y-auto">
+                <div className="space-y-2 max-h-44 overflow-y-auto">
                   {md.markets.slice(0, 5).map((m, i) => (
-                    <div key={i} className="bg-gray-50 rounded-lg p-2">
-                      <p className="text-xs font-medium text-gray-900">{m.market}, {m.district}</p>
+                    <div key={i} className="bg-gray-50 rounded-lg p-2.5">
+                      <p className="text-xs font-semibold text-gray-900">{m.commodity} — {m.market}</p>
                       <div className="flex gap-3 text-xs mt-1">
                         <span className="text-green-600">Min ₹{m.minPrice}</span>
                         <span className="text-blue-600 font-bold">Modal ₹{m.modalPrice}</span>
                         <span className="text-red-600">Max ₹{m.maxPrice}</span>
                       </div>
-                      <p className="text-[10px] text-gray-400">{m.date}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{m.date} • {m.district}, {m.state}</p>
                     </div>
                   ))}
                 </div>
               ) : (
                 <p className="text-gray-400 text-sm">
-                  {market?.status === 'CONFIGURATION_REQUIRED' ? 'Market API key not configured' : 'No market data available'}
+                  {market?.status === 'CONFIGURATION_REQUIRED' ? 'Market API key not configured (MARKET_API_KEY)' : 'No market data available'}
                 </p>
               )}
             </DataCard>
 
-            <DataCard title="Groundwater" icon="💧" status={groundwater?.status} source={groundwater?.source} retrievedAt={groundwater?.retrievedAt}>
+            <DataCard title="Groundwater Status" icon="💧" status={groundwater?.status} source={groundwater?.source} retrievedAt={groundwater?.retrievedAt}>
               <p className="text-gray-400 text-sm">
-                {groundwater?.data?.message || 'Data currently unavailable'}
+                {groundwater?.data?.message || 'District-level groundwater data requires manual integration from CGWB/India-WRIS.'}
               </p>
+              <p className="text-[10px] text-gray-400 mt-2">Note: No stable public REST API available from CGWB</p>
             </DataCard>
           </div>
 
-          {/* Row 3: ML Predictions */}
+          {/* ML Predictions Row */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
             {[
               { key: 'cropSuitability', title: 'Crop Suitability', icon: '🌾' },
-              { key: 'yield', title: 'Yield Prediction', icon: '📈' },
+              { key: 'yield', title: 'Yield Estimate', icon: '📈' },
               { key: 'price', title: 'Price Forecast', icon: '💰' },
-              { key: 'demand', title: 'Demand Prediction', icon: '📦' },
+              { key: 'demand', title: 'Demand Analysis', icon: '📦' },
               { key: 'rainRisk', title: 'Rain Risk', icon: '🌧️' },
             ].map(({ key, title, icon }) => {
               const pred = ml?.[key];
@@ -217,11 +267,11 @@ export default function SmartFarmIntelligence({ farmLocation }) {
                   <span className="text-2xl">{icon}</span>
                   <h4 className="text-xs font-semibold text-gray-700 mt-1">{title}</h4>
                   {pred?.status === 'MODEL_NOT_AVAILABLE' ? (
-                    <p className="text-[10px] text-orange-500 mt-2">Model not yet trained</p>
+                    <p className="text-[10px] text-orange-500 mt-2">ML model training in progress</p>
                   ) : pred?.data?.prediction ? (
                     <p className="text-lg font-bold text-agri-green mt-1">{JSON.stringify(pred.data.prediction)}</p>
                   ) : (
-                    <p className="text-[10px] text-gray-400 mt-2">Unavailable</p>
+                    <p className="text-[10px] text-gray-400 mt-2">Pending</p>
                   )}
                   <StatusBadge status={pred?.status} source={pred?.source} />
                 </motion.div>
@@ -229,44 +279,65 @@ export default function SmartFarmIntelligence({ farmLocation }) {
             })}
           </div>
 
-          {/* Row 4: AI Explanation */}
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-100">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">🤖</span>
-              <h3 className="font-bold text-gray-900">AGRILINK Smart Explanation</h3>
-              <StatusBadge status={ai?.status} source={ai?.source} />
+          {/* AI Smart Explanation */}
+          <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-green-50 rounded-2xl p-6 border border-purple-100 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">🤖</span>
+              <div>
+                <h3 className="font-bold text-gray-900">AGRILINK AI Smart Analysis</h3>
+                <p className="text-[10px] text-gray-500">Powered by Google Gemini — Based on real-time API data only</p>
+              </div>
+              <div className="ml-auto">
+                <StatusBadge status={ai?.status} source={ai?.source} />
+              </div>
             </div>
             {ai?.status === 'GENERATED' && ai?.data?.explanation ? (
-              <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed">
-                {ai.data.explanation}
+              <div className="bg-white/70 rounded-xl p-4 backdrop-blur-sm">
+                <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed text-sm">
+                  {ai.data.explanation}
+                </div>
               </div>
             ) : ai?.status === 'AI_NOT_CONFIGURED' ? (
-              <p className="text-gray-500 text-sm">AI explanation requires API key configuration (AI_API_KEY).</p>
+              <div className="bg-white/50 rounded-xl p-4">
+                <p className="text-gray-500 text-sm">🔑 AI explanation requires Gemini API key (AI_API_KEY in Render env).</p>
+              </div>
             ) : (
-              <p className="text-gray-500 text-sm">AI explanation currently unavailable.</p>
+              <div className="bg-white/50 rounded-xl p-4">
+                <p className="text-gray-500 text-sm">AI analysis currently unavailable. Check API configuration.</p>
+              </div>
             )}
             {ai?.data?.basedOn && ai.data.basedOn.length > 0 && (
-              <p className="text-[10px] text-gray-400 mt-3">Based on: {ai.data.basedOn.join(', ')}</p>
+              <p className="text-[10px] text-gray-400 mt-3">📊 Data sources: {ai.data.basedOn.join(' • ')}</p>
             )}
           </div>
 
-          {/* 7-Day Forecast */}
+          {/* 7-Day Forecast Expandable */}
           {wd?.forecast && wd.forecast.length > 0 && (
             <div className="mt-4">
-              <button onClick={() => setExpanded(!expanded)} className="text-sm text-agri-green font-medium hover:underline">
-                {expanded ? '▲ Hide' : '▼ Show'} 7-Day Forecast
+              <button onClick={() => setExpanded(!expanded)} 
+                className="text-sm text-agri-green font-medium hover:underline flex items-center gap-1">
+                {expanded ? '▲ Hide' : '▼ Show'} 7-Day Weather Forecast
               </button>
               {expanded && (
-                <div className="grid grid-cols-7 gap-2 mt-3">
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                  className="grid grid-cols-7 gap-2 mt-3">
                   {wd.forecast.map((day, i) => (
                     <div key={i} className="bg-white rounded-xl p-3 text-center border border-gray-100 shadow-sm">
-                      <p className="text-[10px] text-gray-500 font-medium">{new Date(day.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' })}</p>
-                      <p className="text-lg mt-1">{day.weatherCondition?.includes('Rain') ? '🌧️' : day.weatherCondition?.includes('Cloud') ? '☁️' : '☀️'}</p>
-                      <p className="text-xs font-semibold">{day.maxTemp}°/{day.minTemp}°</p>
-                      <p className="text-[10px] text-blue-500">{day.rainProbability}% 🌧️</p>
+                      <p className="text-[10px] text-gray-500 font-medium">
+                        {new Date(day.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' })}
+                      </p>
+                      <p className="text-2xl mt-1">
+                        {day.weatherCondition?.includes('Rain') ? '🌧️' : 
+                         day.weatherCondition?.includes('Cloud') ? '☁️' : 
+                         day.weatherCondition?.includes('Thunder') ? '⛈️' : '☀️'}
+                      </p>
+                      <p className="text-xs font-semibold mt-1">{day.maxTemp}°/{day.minTemp}°</p>
+                      {day.rainProbability != null && (
+                        <p className="text-[10px] text-blue-500">{day.rainProbability}% 💧</p>
+                      )}
                     </div>
                   ))}
-                </div>
+                </motion.div>
               )}
             </div>
           )}
