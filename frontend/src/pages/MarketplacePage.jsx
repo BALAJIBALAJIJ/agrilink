@@ -2,14 +2,19 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 export default function MarketplacePage() {
   const { t } = useTranslation();
+  const { user, isAuthenticated } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+
+  const isFarmer = user?.role === 'FARMER';
+  const isBuyer = user?.role === 'BUYER';
 
   useEffect(() => { loadProducts(); }, [page, search]);
 
@@ -27,7 +32,14 @@ export default function MarketplacePage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="section-title">{t('nav.marketplace')}</h1>
-            <p className="text-gray-500 mt-1">Fresh produce directly from verified farmers</p>
+            <p className="text-gray-500 mt-1">
+              {isFarmer ? '📊 View live market stocks & prices' : 'Fresh produce directly from verified farmers'}
+            </p>
+            {isFarmer && (
+              <div className="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-xs text-yellow-700">
+                👁️ Viewing only — Farmers cannot place orders. Only Buyers can order.
+              </div>
+            )}
           </div>
           <div className="relative w-full sm:w-80">
             <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }}
@@ -49,38 +61,61 @@ export default function MarketplacePage() {
             {products.map((product, i) => (
               <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}>
-                <Link to={`/buyer/product/${product.id}`} className="card-interactive block">
-                  <div className="relative h-44 rounded-xl overflow-hidden bg-gray-100 mb-4">
-                    {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.vegetableName} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-green-50 to-green-100">🥬</div>
+                {/* Farmers see view-only card, Buyers get link to order */}
+                {isFarmer ? (
+                  <div className="card-interactive block">
+                    <ProductCard product={product} t={t} />
+                    <div className="mt-3 text-center">
+                      <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full">👁️ View Only</span>
+                    </div>
+                  </div>
+                ) : (
+                  <Link to={`/buyer/product/${product.id}`} className="card-interactive block">
+                    <ProductCard product={product} t={t} />
+                    {(isBuyer || !isAuthenticated) && (
+                      <div className="mt-3 text-center">
+                        <span className="text-xs text-white bg-agri-green px-3 py-1.5 rounded-full">🛒 Order Now</span>
+                      </div>
                     )}
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-medium text-gray-700">
-                      {product.category}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-gray-900">{product.vegetableName}</h3>
-                  {product.vegetableNameTamil && <p className="text-xs text-gray-500">{product.vegetableNameTamil}</p>}
-                  <div className="flex items-end justify-between mt-3">
-                    <div>
-                      <span className="text-2xl font-bold text-agri-green">₹{product.pricePerKg}</span>
-                      <span className="text-sm text-gray-500">{t('product.perKg')}</span>
-                    </div>
-                    <span className="text-sm text-gray-500">{product.quantityAvailable} kg</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                    <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center text-xs">
-                      {product.farmerProfilePhotoUrl ? <img src={product.farmerProfilePhotoUrl} alt="" className="w-full h-full rounded-full object-cover" /> : '👨‍🌾'}
-                    </div>
-                    <span className="text-xs text-gray-500">{product.farmerName}</span>
-                  </div>
-                </Link>
+                  </Link>
+                )}
               </motion.div>
             ))}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function ProductCard({ product, t }) {
+  return (
+    <>
+      <div className="relative h-44 rounded-xl overflow-hidden bg-gray-100 mb-4">
+        {product.imageUrl ? (
+          <img src={product.imageUrl} alt={product.vegetableName} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-green-50 to-green-100">🥬</div>
+        )}
+        <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-medium text-gray-700">
+          {product.category}
+        </span>
+      </div>
+      <h3 className="font-bold text-gray-900">{product.vegetableName}</h3>
+      {product.vegetableNameTamil && <p className="text-xs text-gray-500">{product.vegetableNameTamil}</p>}
+      <div className="flex items-end justify-between mt-3">
+        <div>
+          <span className="text-2xl font-bold text-agri-green">₹{product.pricePerKg}</span>
+          <span className="text-sm text-gray-500">{t('product.perKg')}</span>
+        </div>
+        <span className="text-sm text-gray-500">{product.quantityAvailable} kg</span>
+      </div>
+      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+        <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center text-xs">
+          {product.farmerProfilePhotoUrl ? <img src={product.farmerProfilePhotoUrl} alt="" className="w-full h-full rounded-full object-cover" /> : '👨‍🌾'}
+        </div>
+        <span className="text-xs text-gray-500">{product.farmerName}</span>
+      </div>
+    </>
   );
 }
