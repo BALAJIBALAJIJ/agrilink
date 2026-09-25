@@ -1,0 +1,66 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: agrilink-backend
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/agrilink}
+      auto-index-creation: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:placeholder}
+            client-secret: ${GOOGLE_CLIENT_SECRET:placeholder}
+            scope: openid, profile, email
+            redirect-uri: ${BACKEND_URL:http://localhost:8080}/api/auth/google/callback
+
+# Application-specific configuration
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-this-to-a-secure-random-string-in-production}
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000
+
+  cors:
+    allowed-origins: ${FRONTEND_URL:http://localhost:5173}
+
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:placeholder}
+    api-key: ${CLOUDINARY_API_KEY:placeholder}
+    api-secret: ${CLOUDINARY_API_SECRET:placeholder}
+
+  admin:
+    username: ${ADMIN_USERNAME:BALAJINADAR}
+    password: ${ADMIN_PASSWORD:change-this-in-production}
+
+  routing:
+    osrm-base-url: ${OSRM_BASE_URL:https://router.project-osrm.org}
+
+  geocoding:
+    provider-url: ${GEOCODING_PROVIDER_URL:https://nominatim.openstreetmap.org}
+
+  overpass:
+    url: ${OVERPASS_URL:https://overpass-api.de/api/interpreter}
+
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
+
+  backend:
+    url: ${BACKEND_URL:http://localhost:8080}
+
+logging:
+  level:
+    com.agrilink: DEBUG
+    org.springframework.security: INFO
+    org.springframework.data.mongodb: INFO

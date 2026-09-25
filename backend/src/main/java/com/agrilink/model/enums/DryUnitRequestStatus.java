@@ -1,0 +1,17 @@
+package com.agrilink.model.enums;
+
+public enum DryUnitRequestStatus {
+    SUBMITTED,
+    OFFER_SENT,
+    COUNTER_OFFERED,
+    FARMER_ACCEPTED,
+    FARMER_REJECTED,
+    TRANSPORT_REQUESTED,
+    IN_TRANSIT,
+    RECEIVED,
+    UNDER_PROCESSING,
+    PROCESSED,
+    PAYMENT_PENDING,
+    PAYMENT_COMPLETED,
+    CANCELLED
+}

@@ -1,0 +1,24 @@
+# Backend
+backend/target/
+backend/.mvn/maven/
+backend/.mvn/maven.zip
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+*.env.local
+
+backend/.env
