@@ -24,10 +24,8 @@ public class User {
 
     private String fullName;
 
-    @Indexed(unique = true, sparse = true)
     private String mobileNumber;
 
-    @Indexed(unique = true, sparse = true)
     private String email;
 
     private String password;
