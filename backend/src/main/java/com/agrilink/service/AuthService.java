@@ -69,7 +69,7 @@ public class AuthService {
         User user = User.builder()
                 .fullName(request.getFullName())
                 .mobileNumber(normalizedMobile)
-                .email(request.getEmail())
+                .email(request.getEmail() != null && !request.getEmail().isBlank() ? request.getEmail() : null)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .dateOfBirth(request.getDateOfBirth() != null ? LocalDate.parse(request.getDateOfBirth()) : null)
                 .role(role)
@@ -279,7 +279,9 @@ public class AuthService {
                 user.setMobileNumber(normalized);
             }
         }
-        if (request.getEmail() != null) user.setEmail(request.getEmail());
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            user.setEmail(request.getEmail());
+        }
 
         user.setProfileCompleted(true);
         user.setUpdatedAt(LocalDateTime.now());
