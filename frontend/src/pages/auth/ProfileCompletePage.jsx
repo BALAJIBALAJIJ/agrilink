@@ -119,6 +119,10 @@ export default function ProfileCompletePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.mobileNumber || !/^[6-9]\d{9}$/.test(form.mobileNumber)) {
+      toast.error('Please enter a valid 10-digit mobile number');
+      return;
+    }
     setLoading(true);
     try {
       const auth = await completeProfile(form);
@@ -190,6 +194,17 @@ export default function ProfileCompletePage() {
                 <input type="date" value={form.dateOfBirth} onChange={e => setForm({...form, dateOfBirth: e.target.value})}
                   className="input-field" />
               </div>
+            </div>
+
+            {/* Mobile Number - Mandatory */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">📱 Mobile Number * <span className="text-xs text-red-500">(Required for transport & orders)</span></label>
+              <input type="tel" value={form.mobileNumber} 
+                onChange={e => setForm({...form, mobileNumber: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                className="input-field" placeholder="9876543210" maxLength={10} required />
+              {form.mobileNumber && !/^[6-9]\d{9}$/.test(form.mobileNumber) && (
+                <p className="text-red-500 text-xs mt-1">Enter a valid 10-digit mobile number</p>
+              )}
             </div>
 
             {/* Location */}
