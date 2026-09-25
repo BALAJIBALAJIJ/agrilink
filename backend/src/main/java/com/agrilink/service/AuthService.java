@@ -73,7 +73,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .dateOfBirth(request.getDateOfBirth() != null ? LocalDate.parse(request.getDateOfBirth()) : null)
                 .role(role)
-                .verificationStatus(VerificationStatus.PENDING_VERIFICATION)
+                .verificationStatus(VerificationStatus.APPROVED)
                 .profileCompleted(false)
                 .passwordChangeRequired(false)
                 .preferredLanguage("en")
