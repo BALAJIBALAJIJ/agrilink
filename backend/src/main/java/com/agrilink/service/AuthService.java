@@ -258,10 +258,21 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (request.getFullName() != null) user.setFullName(request.getFullName());
-        if (request.getDateOfBirth() != null) user.setDateOfBirth(LocalDate.parse(request.getDateOfBirth()));
-        if (request.getMobileNumber() != null) {
+        if (request.getDateOfBirth() != null && !request.getDateOfBirth().isBlank()) {
+            try {
+                user.setDateOfBirth(LocalDate.parse(request.getDateOfBirth()));
+            } catch (Exception e) {
+                try {
+                    user.setDateOfBirth(LocalDate.parse(request.getDateOfBirth(), 
+                        java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+                } catch (Exception e2) {
+                    // Skip if date can't be parsed
+                }
+            }
+        }
+        if (request.getMobileNumber() != null && !request.getMobileNumber().isBlank()) {
             String normalized = normalizeMobile(request.getMobileNumber());
-            if (user.getMobileNumber() == null || !user.getMobileNumber().equals(normalized)) {
+            if (!normalized.isBlank() && (user.getMobileNumber() == null || !user.getMobileNumber().equals(normalized))) {
                 if (userRepository.existsByMobileNumber(normalized)) {
                     throw new ConflictException("Mobile number already registered");
                 }
