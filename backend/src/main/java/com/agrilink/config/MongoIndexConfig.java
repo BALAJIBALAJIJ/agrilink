@@ -44,6 +44,11 @@ public class MongoIndexConfig {
                     log.info("Dropped old mobile index");
                 } catch (Exception e) { /* index may not exist */ }
 
+                try {
+                    mongoTemplate.getCollection("orders").dropIndex("orderId_1");
+                    log.info("Dropped old orderId index");
+                } catch (Exception e) { /* index may not exist */ }
+
                 // Recreate as sparse unique
                 mongoTemplate.indexOps("users").ensureIndex(
                     new Index().on("email", org.springframework.data.domain.Sort.Direction.ASC)
@@ -51,6 +56,10 @@ public class MongoIndexConfig {
                 );
                 mongoTemplate.indexOps("users").ensureIndex(
                     new Index().on("mobileNumber", org.springframework.data.domain.Sort.Direction.ASC)
+                        .unique().sparse()
+                );
+                mongoTemplate.indexOps("orders").ensureIndex(
+                    new Index().on("orderId", org.springframework.data.domain.Sort.Direction.ASC)
                         .unique().sparse()
                 );
 
