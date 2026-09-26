@@ -121,13 +121,13 @@ public class TamilNaduLocationSeeder implements CommandLineRunner {
 
     private DryUnit du(String name, String district, String address, double lat, double lon, String phone) {
         return DryUnit.builder().name(name).district(district).address(address)
-                .location(new GeoLocation(lat, lon, address)).contactNumber(phone)
-                .contactPerson(district + " Manager").processingCapacityKg(5000).active(true).build();
+                .location(GeoLocation.builder().latitude(lat).longitude(lon).address(address).district(district).state("Tamil Nadu").build())
+                .contactNumber(phone).contactPerson(district + " Manager").processingCapacityKg(5000).active(true).build();
     }
 
     private BiogasPlant bp(String name, String district, String address, double lat, double lon, String phone) {
         return BiogasPlant.builder().name(name).district(district).address(address)
-                .location(new GeoLocation(lat, lon, address)).contactNumber(phone)
-                .contactPerson(district + " Manager").processingCapacityKg(10000).active(true).build();
+                .location(GeoLocation.builder().latitude(lat).longitude(lon).address(address).district(district).state("Tamil Nadu").build())
+                .contactNumber(phone).contactPerson(district + " Manager").processingCapacityKg(10000).active(true).build();
     }
 }

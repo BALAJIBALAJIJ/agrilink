@@ -162,12 +162,15 @@ public class DryUnitService {
         request.setUpdatedAt(LocalDateTime.now());
         dryUnitRequestRepository.save(request);
 
-        // Notify dry unit
-        notificationService.createNotification(getDryUnitByManagerId(request.getDryUnitId()) != null ?
-                        dryUnitRepository.findById(request.getDryUnitId()).map(DryUnit::getManagerId).orElse(null) : null,
+        // Notify dry unit manager
+        String managerId = dryUnitRepository.findById(request.getDryUnitId())
+                .map(DryUnit::getManagerId).orElse(null);
+        if (managerId != null) {
+            notificationService.createNotification(managerId,
                 "✅ Farmer Accepted Offer",
                 request.getFarmerName() + " accepted your offer for " + request.getVegetableName(),
                 "DRY_UNIT", requestId, "DRY_UNIT_REQUEST");
+        }
 
         return request;
     }
