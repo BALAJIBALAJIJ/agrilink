@@ -112,8 +112,6 @@ export default function FarmerDashboard() {
           ))}
         </div>
 
-        </div>
-
         {/* Live Tracking */}
         {trackingOrderId && (
           <div className="mb-6">
