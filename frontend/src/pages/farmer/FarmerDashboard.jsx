@@ -95,12 +95,13 @@ export default function FarmerDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {[
             { to: '/farmer/products', label: t('farmer.myProducts'), icon: '🌿', desc: 'View & manage listings' },
             { to: '/farmer/orders', label: t('farmer.orderedVeg'), icon: '📋', desc: 'View incoming orders' },
             { to: '/farmer/products/create', label: t('farmer.addProduct'), icon: '➕', desc: 'List new vegetables' },
             { to: '/dry-unit', label: t('farmer.dryUnit'), icon: '🏭', desc: 'Send surplus produce' },
+            { to: '/biogas', label: 'Biogas', icon: '⚡', desc: 'Sell organic waste' },
           ].map((action, i) => (
             <Link key={i} to={action.to} className="card-interactive flex items-start gap-4">
               <div className="text-3xl">{action.icon}</div>
