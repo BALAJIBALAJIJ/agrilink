@@ -26,16 +26,19 @@ public class TransportRequest {
     @Indexed
     private String farmerId;
     private String farmerName;
+    private String farmerPhone;
 
     @Indexed
     private String buyerId;
     private String buyerName;
+    private String buyerPhone;
 
     @Indexed
     private String transporterId;
     private String transporterName;
 
     private String productName;
+    private String productImageUrl;
     private double quantity;
     private double requiredCapacity;
 
@@ -52,6 +55,9 @@ public class TransportRequest {
     private double unloadingCharge;
     private double totalTransportCharge;
     private double estimatedFuelCost;
+
+    private double productTotal;
+    private double cashAmountReceived;
 
     private TransportStatus status;
 

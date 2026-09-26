@@ -107,15 +107,25 @@ public class OrderService {
     }
 
     private void autoCreateTransportRequest(Order order) {
+        // Fetch phone numbers
+        String farmerPhone = userRepository.findById(order.getFarmerId())
+                .map(User::getMobileNumber).orElse("");
+        String buyerPhone = userRepository.findById(order.getBuyerId())
+                .map(User::getMobileNumber).orElse("");
+
         TransportRequest transportReq = TransportRequest.builder()
                 .orderId(order.getId())
                 .farmerId(order.getFarmerId())
                 .farmerName(order.getFarmerName())
+                .farmerPhone(farmerPhone)
                 .buyerId(order.getBuyerId())
                 .buyerName(order.getBuyerName())
+                .buyerPhone(buyerPhone)
                 .productName(order.getProductName())
+                .productImageUrl(order.getProductImageUrl())
                 .quantity(order.getQuantity())
                 .requiredCapacity(order.getQuantity())
+                .productTotal(order.getProductTotal())
                 .pickupLocation(order.getPickupLocation())
                 .deliveryLocation(order.getDeliveryLocation())
                 .status(TransportStatus.REQUESTED)

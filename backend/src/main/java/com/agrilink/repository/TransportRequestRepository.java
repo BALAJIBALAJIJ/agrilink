@@ -14,4 +14,7 @@ public interface TransportRequestRepository extends MongoRepository<TransportReq
     Page<TransportRequest> findByTransporterId(String transporterId, Pageable pageable);
     List<TransportRequest> findByStatus(TransportStatus status);
     long countByTransporterIdAndStatusIn(String transporterId, List<TransportStatus> statuses);
+    List<TransportRequest> findByTransporterIdOrderByCreatedAtDesc(String transporterId);
+    List<TransportRequest> findByFarmerIdOrderByCreatedAtDesc(String farmerId);
+    List<TransportRequest> findByBuyerIdOrderByCreatedAtDesc(String buyerId);
 }

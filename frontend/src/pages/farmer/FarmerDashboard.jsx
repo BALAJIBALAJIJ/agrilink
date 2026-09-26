@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import SmartFarmIntelligence from '../../components/farmer/SmartFarmIntelligence';
+import LiveTracker from '../../components/transport/LiveTracker';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
@@ -14,6 +15,7 @@ export default function FarmerDashboard() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [farmLocation, setFarmLocation] = useState(null);
+  const [trackingOrderId, setTrackingOrderId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -110,7 +112,16 @@ export default function FarmerDashboard() {
           ))}
         </div>
 
-        {/* Recent Orders */}
+        </div>
+
+        {/* Live Tracking */}
+        {trackingOrderId && (
+          <div className="mb-6">
+            <LiveTracker transportRequestId={trackingOrderId} onClose={() => setTrackingOrderId(null)} />
+          </div>
+        )}
+
+        {/* Recent Orders with Track Button */}
         <div className="card">
           <h2 className="text-lg font-bold text-gray-900 mb-4">{t('farmer.orderedVeg')}</h2>
           {orders.length === 0 ? (
@@ -123,23 +134,30 @@ export default function FarmerDashboard() {
               {orders.map((order) => (
                 <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center text-lg">
-                      🥬
-                    </div>
+                    <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center text-lg">🥬</div>
                     <div>
                       <p className="font-medium text-gray-900">{order.productName}</p>
                       <p className="text-xs text-gray-500">{order.quantity} kg • ₹{order.pricePerKg}/kg</p>
+                      {order.transporterName && <p className="text-xs text-blue-600">🚛 {order.transporterName}</p>}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">₹{order.productTotal?.toFixed(0)}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                      order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
-                      'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {t(`status.${order.status?.replace(/_/g,'').toLowerCase()}`) || order.status}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">₹{order.productTotal?.toFixed(0)}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                        order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {order.status?.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    {['TRANSPORT_ASSIGNED','GOING_TO_PICKUP','ARRIVED_AT_PICKUP','PICKED_UP','IN_TRANSIT','NEAR_DESTINATION'].includes(order.status) && order.transportRequestId && (
+                      <button onClick={() => setTrackingOrderId(order.transportRequestId)}
+                        className="text-xs bg-blue-600 text-white px-2 py-1 rounded-lg hover:bg-blue-700">
+                        📍 Track
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

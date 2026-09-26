@@ -167,18 +167,6 @@ public class TransportService {
             request.setPickedUpAt(LocalDateTime.now());
         } else if (newStatus == TransportStatus.DELIVERED) {
             request.setDeliveredAt(LocalDateTime.now());
-
-            // Free up transporter
-            transporterProfileRepository.findByUserId(transporterId).ifPresent(profile -> {
-                profile.setCurrentlyOnDelivery(false);
-                profile.setActiveDeliveryId(null);
-                profile.setCompletedDeliveries(profile.getCompletedDeliveries() + 1);
-                if (request.getDistance() > 0) {
-                    profile.setTotalDistanceTravelled(profile.getTotalDistanceTravelled() + request.getDistance());
-                }
-                profile.setTotalEarnings(profile.getTotalEarnings() + request.getTotalTransportCharge());
-                transporterProfileRepository.save(profile);
-            });
         }
 
         transportRequestRepository.save(request);
@@ -211,6 +199,59 @@ public class TransportService {
                 statusMessage, "TRANSPORT", requestId, "TRANSPORT_REQUEST");
         notificationService.createNotification(request.getBuyerId(), "Transport Update",
                 statusMessage, "TRANSPORT", requestId, "TRANSPORT_REQUEST");
+    }
+
+    public void confirmCashAndComplete(String transporterId, String requestId, double cashAmount) {
+        TransportRequest request = transportRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transport request not found"));
+
+        if (!request.getTransporterId().equals(transporterId)) {
+            throw new ForbiddenException("Not authorized");
+        }
+
+        if (request.getStatus() != TransportStatus.DELIVERED) {
+            throw new BadRequestException("Delivery must be marked as DELIVERED first");
+        }
+
+        request.setCashAmountReceived(cashAmount);
+        request.setStatus(TransportStatus.COMPLETED);
+        request.setUpdatedAt(LocalDateTime.now());
+        transportRequestRepository.save(request);
+
+        // Free up transporter
+        transporterProfileRepository.findByUserId(transporterId).ifPresent(profile -> {
+            profile.setCurrentlyOnDelivery(false);
+            profile.setActiveDeliveryId(null);
+            profile.setCompletedDeliveries(profile.getCompletedDeliveries() + 1);
+            if (request.getDistance() > 0) {
+                profile.setTotalDistanceTravelled(profile.getTotalDistanceTravelled() + request.getDistance());
+            }
+            profile.setTotalEarnings(profile.getTotalEarnings() + request.getTotalTransportCharge());
+            transporterProfileRepository.save(profile);
+        });
+
+        // Update order to COMPLETED
+        Order order = orderRepository.findById(request.getOrderId()).orElse(null);
+        if (order != null) {
+            order.setStatus(OrderStatus.COMPLETED);
+            order.setPaymentStatus(PaymentStatus.VERIFIED);
+            order.setUpdatedAt(LocalDateTime.now());
+            orderRepository.save(order);
+        }
+
+        // Notify all parties
+        notificationService.createNotification(request.getFarmerId(), "✅ Order Completed",
+                "Cash ₹" + cashAmount + " collected. Delivery completed!", "ORDER", requestId, "TRANSPORT_REQUEST");
+        notificationService.createNotification(request.getBuyerId(), "✅ Order Completed",
+                "Your order has been delivered. Cash ₹" + cashAmount + " paid.", "ORDER", requestId, "TRANSPORT_REQUEST");
+
+        messagingTemplate.convertAndSend("/topic/transport/" + requestId, Map.of(
+                "requestId", requestId, "status", "COMPLETED",
+                "cashAmount", cashAmount, "timestamp", LocalDateTime.now().toString()));
+    }
+
+    public List<TransportRequest> getTransporterHistory(String transporterId) {
+        return transportRequestRepository.findByTransporterIdOrderByCreatedAtDesc(transporterId);
     }
 
     public void updateGpsLocation(String transporterId, String requestId,

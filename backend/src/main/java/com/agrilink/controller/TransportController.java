@@ -108,4 +108,20 @@ public class TransportController {
         );
         return ResponseEntity.ok(ApiResponse.success("GPS updated"));
     }
+
+    @PostMapping("/requests/{id}/confirm-cash")
+    public ResponseEntity<ApiResponse> confirmCash(
+            @AuthenticationPrincipal User user,
+            @PathVariable String id,
+            @RequestBody Map<String, Object> body) {
+        double cashAmount = ((Number) body.get("cashAmount")).doubleValue();
+        transportService.confirmCashAndComplete(user.getId(), id, cashAmount);
+        return ResponseEntity.ok(ApiResponse.success("Cash confirmed and delivery completed"));
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse> getHistory(@AuthenticationPrincipal User user) {
+        List<TransportRequest> history = transportService.getTransporterHistory(user.getId());
+        return ResponseEntity.ok(ApiResponse.success("Delivery history", history));
+    }
 }
