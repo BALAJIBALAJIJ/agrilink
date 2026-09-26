@@ -23,6 +23,8 @@ public class MarketDataService {
     @Value("${agrilink.market.api-key:}")
     private String apiKey;
 
+    private static final String MARKET_API_URL = "https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070";
+
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.agrilink.repository.MarketPriceRepository marketPriceRepository;
 
