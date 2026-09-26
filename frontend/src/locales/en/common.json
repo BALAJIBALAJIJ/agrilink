@@ -63,7 +63,17 @@
     "buyer": "Buyer",
     "buyerDesc": "Browse fresh produce from verified farmers and order with delivery.",
     "transporter": "Transporter",
-    "transporterDesc": "Deliver produce with GPS tracking and earn per delivery."
+    "transporterDesc": "Deliver produce with GPS tracking and earn per delivery.",
+    "admin": "Admin",
+    "adminDesc": "Manage platform users, verify KYC, resolve issues and oversee marketplace operations.",
+    "dryUnit": "Dry Unit",
+    "dryUnitDesc": "Process surplus & low-grade produce into dehydrated goods and manage farmer requests.",
+    "biogas": "Bio Gas",
+    "biogasDesc": "Convert agricultural waste into clean biogas energy, bio-slurry and organic fertilizers.",
+    "getStarted": "Get Started →",
+    "adminLoginBtn": "Admin Login →",
+    "dryUnitLoginBtn": "Dry Unit Login →",
+    "biogasLoginBtn": "Biogas Login →"
   },
   "auth": {
     "loginTitle": "Welcome Back",

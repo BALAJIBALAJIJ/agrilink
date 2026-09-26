@@ -273,31 +273,90 @@ export default function LandingPage() {
             <motion.h2 variants={fadeUp} className="section-title mb-4">{t('roles.selectRole')}</motion.h2>
           </motion.div>
 
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {[
-              { role: 'FARMER', icon: '👨‍🌾', title: t('roles.farmer'), desc: t('roles.farmerDesc'), color: 'from-green-500 to-emerald-600', glow: 'hover:shadow-green-200' },
-              { role: 'BUYER', icon: '🛍️', title: t('roles.buyer'), desc: t('roles.buyerDesc'), color: 'from-blue-500 to-indigo-600', glow: 'hover:shadow-blue-200' },
-              { role: 'TRANSPORTER', icon: '🚛', title: t('roles.transporter'), desc: t('roles.transporterDesc'), color: 'from-orange-500 to-red-600', glow: 'hover:shadow-orange-200' },
+              {
+                role: 'FARMER',
+                icon: '👨‍🌾',
+                title: t('roles.farmer'),
+                desc: t('roles.farmerDesc'),
+                color: 'from-green-500 to-emerald-600',
+                glow: 'hover:shadow-green-200',
+                to: '/auth/register?role=FARMER',
+                btnText: t('roles.getStarted', 'Get Started →')
+              },
+              {
+                role: 'BUYER',
+                icon: '🛍️',
+                title: t('roles.buyer'),
+                desc: t('roles.buyerDesc'),
+                color: 'from-blue-500 to-indigo-600',
+                glow: 'hover:shadow-blue-200',
+                to: '/auth/register?role=BUYER',
+                btnText: t('roles.getStarted', 'Get Started →')
+              },
+              {
+                role: 'TRANSPORTER',
+                icon: '🚛',
+                title: t('roles.transporter'),
+                desc: t('roles.transporterDesc'),
+                color: 'from-orange-500 to-red-600',
+                glow: 'hover:shadow-orange-200',
+                to: '/auth/register?role=TRANSPORTER',
+                btnText: t('roles.getStarted', 'Get Started →')
+              },
+              {
+                role: 'ADMIN',
+                icon: '🛡️',
+                title: t('roles.admin', 'Admin'),
+                desc: t('roles.adminDesc', 'Manage platform users, verify KYC, resolve issues and oversee marketplace operations.'),
+                color: 'from-purple-600 to-indigo-700',
+                glow: 'hover:shadow-purple-200',
+                to: '/admin/login',
+                btnText: t('roles.adminLoginBtn', 'Admin Login →')
+              },
+              {
+                role: 'DRY_UNIT',
+                icon: '🏭',
+                title: t('roles.dryUnit', 'Dry Unit'),
+                desc: t('roles.dryUnitDesc', 'Process surplus & low-grade produce into dehydrated goods and manage farmer requests.'),
+                color: 'from-amber-500 to-orange-600',
+                glow: 'hover:shadow-amber-200',
+                to: '/manager/login/dry-unit',
+                btnText: t('roles.dryUnitLoginBtn', 'Dry Unit Login →')
+              },
+              {
+                role: 'BIOGAS',
+                icon: '⚡',
+                title: t('roles.biogas', 'Bio Gas'),
+                desc: t('roles.biogasDesc', 'Convert agricultural waste into clean biogas energy, bio-slurry and organic fertilizers.'),
+                color: 'from-teal-600 to-emerald-700',
+                glow: 'hover:shadow-teal-200',
+                to: '/manager/login/biogas',
+                btnText: t('roles.biogasLoginBtn', 'Biogas Login →')
+              },
             ].map((card) => (
-              <motion.div key={card.role} variants={fadeUp}>
+              <motion.div key={card.role} variants={fadeUp} className="h-full">
                 <Link
-                  to={`/auth/register?role=${card.role}`}
-                  className={`block card-interactive text-center py-10 ${card.glow} hover:shadow-2xl`}
+                  to={card.to}
+                  className={`block card-interactive text-center py-10 ${card.glow} hover:shadow-2xl h-full flex flex-col justify-between`}
                 >
-                  <motion.div
-                    whileHover={{ rotateY: 15, rotateX: -5, scale: 1.05 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                    className="perspective-1000"
-                  >
-                    <div className={`w-24 h-24 mx-auto bg-gradient-to-br ${card.color} rounded-3xl flex items-center justify-center text-5xl mb-6 shadow-xl`}>
-                      {card.icon}
-                    </div>
-                  </motion.div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{card.title}</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed px-4">{card.desc}</p>
+                  <div>
+                    <motion.div
+                      whileHover={{ rotateY: 15, rotateX: -5, scale: 1.05 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                      className="perspective-1000"
+                    >
+                      <div className={`w-24 h-24 mx-auto bg-gradient-to-br ${card.color} rounded-3xl flex items-center justify-center text-5xl mb-6 shadow-xl`}>
+                        {card.icon}
+                      </div>
+                    </motion.div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{card.title}</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed px-4">{card.desc}</p>
+                  </div>
                   <div className="mt-6">
-                    <span className={`inline-flex items-center gap-2 bg-gradient-to-r ${card.color} text-white px-6 py-2 rounded-full text-sm font-semibold`}>
-                      Get Started →
+                    <span className={`inline-flex items-center gap-2 bg-gradient-to-r ${card.color} text-white px-6 py-2.5 rounded-full text-sm font-semibold shadow-md hover:shadow-lg transition-all`}>
+                      {card.btnText}
                     </span>
                   </div>
                 </Link>
@@ -329,11 +388,14 @@ export default function LandingPage() {
               </div>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Roles</h4>
+              <h4 className="font-semibold mb-4">Roles & Portals</h4>
               <div className="space-y-2 text-white/70 text-sm">
                 <Link to="/auth/register?role=FARMER" className="block hover:text-white">For Farmers</Link>
                 <Link to="/auth/register?role=BUYER" className="block hover:text-white">For Buyers</Link>
                 <Link to="/auth/register?role=TRANSPORTER" className="block hover:text-white">For Transporters</Link>
+                <Link to="/admin/login" className="block hover:text-white">🛡️ Admin Portal</Link>
+                <Link to="/manager/login/dry-unit" className="block hover:text-white">🏭 Dry Unit Manager</Link>
+                <Link to="/manager/login/biogas" className="block hover:text-white">⚡ Bio Gas Manager</Link>
               </div>
             </div>
             <div>

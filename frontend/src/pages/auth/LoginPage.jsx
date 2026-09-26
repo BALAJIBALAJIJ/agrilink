@@ -139,11 +139,19 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-3">
             <p className="text-sm text-gray-500">
               {t('auth.noAccount')}{' '}
               <Link to="/auth/register" className="text-agri-green font-semibold hover:underline">{t('auth.signUp')}</Link>
             </p>
+            <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
+              <span className="text-gray-400">Management:</span>
+              <Link to="/admin/login" className="text-purple-600 hover:underline font-medium">🛡️ Admin</Link>
+              <span>•</span>
+              <Link to="/manager/login/dry-unit" className="text-orange-600 hover:underline font-medium">🏭 Dry Unit</Link>
+              <span>•</span>
+              <Link to="/manager/login/biogas" className="text-teal-600 hover:underline font-medium">⚡ Bio Gas</Link>
+            </div>
           </div>
         </div>
       </motion.div>
