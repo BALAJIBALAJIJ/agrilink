@@ -18,7 +18,8 @@ export default function BiogasDashboard() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(null);
-  const [form, setForm] = useState({ wasteType: 'Vegetable Waste', quantityKg: '', description: '', imageUrl: '' });
+  const [showProfile, setShowProfile] = useState(null);
+  const [form, setForm] = useState({ wasteType: 'Vegetable Waste', quantityKg: '', description: '' });
   const [offerForm, setOfferForm] = useState({ ratePerKg: '', totalAmount: '', suitability: 'SUITABLE' });
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -27,13 +28,15 @@ export default function BiogasDashboard() {
 
   const loadData = async () => {
     try {
-      const [reqRes, plantRes] = await Promise.allSettled([
-        isFarmer ? api.get('/biogas/requests/farmer?page=0&size=50') :
-        isManager ? api.get('/biogas/manager/requests?page=0&size=50') : null,
-        api.get('/biogas/plants'),
-      ]);
-      if (reqRes.status === 'fulfilled' && reqRes.value) setRequests(reqRes.value.data.data?.content || []);
-      if (plantRes.status === 'fulfilled') setPlants(plantRes.value.data.data || []);
+      const calls = [api.get('/biogas/plants')];
+      if (isFarmer) calls.push(api.get('/biogas/requests/farmer?page=0&size=50'));
+      else if (isManager) calls.push(api.get('/biogas/manager/requests?page=0&size=50'));
+      const results = await Promise.allSettled(calls);
+      if (results[0].status === 'fulfilled') setPlants(results[0].value.data.data || []);
+      if (results[1]?.status === 'fulfilled') {
+        const d = results[1].value.data.data;
+        setRequests(d?.content || d || []);
+      }
     } catch {} finally { setLoading(false); }
   };
 
@@ -52,9 +55,8 @@ export default function BiogasDashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.wasteType || !form.quantityKg) { toast.error('Fill required fields'); return; }
-
     try {
-      let imageUrl = form.imageUrl;
+      let imageUrl = '';
       if (imageFile) imageUrl = await uploadImage();
 
       const profileRes = await api.get('/profile/me');
@@ -70,7 +72,7 @@ export default function BiogasDashboard() {
       });
       toast.success('⚡ Request sent to nearest Biogas Plant!');
       setShowForm(false);
-      setForm({ wasteType: 'Vegetable Waste', quantityKg: '', description: '', imageUrl: '' });
+      setForm({ wasteType: 'Vegetable Waste', quantityKg: '', description: '' });
       setImageFile(null);
       loadData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
@@ -84,9 +86,8 @@ export default function BiogasDashboard() {
         totalAmount: Number(offerForm.totalAmount),
         suitability: offerForm.suitability,
       });
-      toast.success('💰 Purchase offer sent!');
+      toast.success('💰 Purchase offer sent to farmer!');
       setShowOfferModal(null);
-      setOfferForm({ ratePerKg: '', totalAmount: '', suitability: 'SUITABLE' });
       loadData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
   };
@@ -113,27 +114,29 @@ export default function BiogasDashboard() {
   return (
     <div className="pt-20 pb-12 bg-gray-50 min-h-screen">
       <div className="page-container">
+        {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl p-6 sm:p-8 text-white mb-6 shadow-xl">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1">⚡ Biogas Waste Management</h1>
-              <p className="text-white/80">{isFarmer ? 'Sell agricultural waste for biogas energy' : 'Manage waste collection requests'}</p>
+              <p className="text-white/80">{isFarmer ? 'Sell agricultural & organic waste for biogas energy' : 'Manage waste collection requests'}</p>
             </div>
             {isFarmer && (
-              <button onClick={() => setShowForm(!showForm)} className="px-5 py-2.5 bg-white text-green-600 rounded-xl font-semibold hover:bg-white/90 transition-all">
+              <button onClick={() => setShowForm(!showForm)}
+                className="px-5 py-2.5 bg-white text-green-600 rounded-xl font-semibold hover:bg-white/90 transition-all">
                 {showForm ? '✕ Close' : '🌿 Sell Organic Waste'}
               </button>
             )}
           </div>
         </motion.div>
 
-        {/* Farmer Submit Form */}
+        {/* Farmer Waste Submission Form */}
         <AnimatePresence>
           {showForm && isFarmer && (
             <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
               onSubmit={handleSubmit} className="card mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">🌿 Submit Waste for Biogas</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">🌿 Submit Organic Waste for Biogas</h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-700">Waste Type *</label>
@@ -148,7 +151,7 @@ export default function BiogasDashboard() {
                     className="input-field mt-1" placeholder="100" required />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Waste Image</label>
+                  <label className="text-sm font-medium text-gray-700">Waste Image *</label>
                   <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files[0])}
                     className="input-field mt-1" />
                 </div>
@@ -159,13 +162,13 @@ export default function BiogasDashboard() {
                 </div>
               </div>
               <button type="submit" disabled={uploading} className="btn-primary mt-4 w-full !bg-green-600 hover:!bg-green-700">
-                {uploading ? '⏳ Uploading...' : '⚡ Submit to Nearest Biogas Plant'}
+                {uploading ? '⏳ Uploading Image...' : '⚡ Submit to Nearest Biogas Plant'}
               </button>
             </motion.form>
           )}
         </AnimatePresence>
 
-        {/* Requests */}
+        {/* Requests List */}
         <div className="card mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">
             {isManager ? '📋 Incoming Waste Requests' : '📋 My Biogas Requests'}
@@ -176,6 +179,7 @@ export default function BiogasDashboard() {
             <div className="empty-state">
               <span className="text-5xl mb-3">⚡</span>
               <p className="text-gray-500">No requests yet</p>
+              {isFarmer && <p className="text-sm text-gray-400 mt-1">Submit agricultural waste to earn from biogas conversion</p>}
             </div>
           ) : (
             <div className="space-y-4">
@@ -183,48 +187,78 @@ export default function BiogasDashboard() {
                 <div key={req.id} className="p-5 bg-gray-50 rounded-xl">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex items-start gap-4 flex-1">
-                      {req.imageUrl && (
-                        <img src={req.imageUrl} alt={req.wasteType} className="w-16 h-16 rounded-xl object-cover" />
+                      {req.imageUrl ? (
+                        <img src={req.imageUrl} alt={req.wasteType} className="w-16 h-16 rounded-xl object-cover shadow-sm" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-green-100 flex items-center justify-center text-2xl">🌿</div>
                       )}
                       <div>
                         <h3 className="font-bold text-gray-900 text-lg">{req.wasteType}</h3>
-                        <p className="text-sm text-gray-500">{req.quantityKg} kg • {req.farmerName}</p>
+                        <p className="text-sm text-gray-500">{req.quantityKg} kg</p>
+
+                        {/* Farmer name - clickable for manager */}
+                        {isManager ? (
+                          <button onClick={() => setShowProfile({ farmerId: req.farmerId, farmerName: req.farmerName })}
+                            className="text-sm text-blue-600 hover:underline font-medium mt-1">
+                            👨‍🌾 {req.farmerName} →
+                          </button>
+                        ) : (
+                          <p className="text-sm text-gray-500 mt-1">👨‍🌾 {req.farmerName}</p>
+                        )}
+
                         {req.description && <p className="text-xs text-gray-400 mt-1">{req.description}</p>}
+                        {req.location && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            📍 {req.location.address || `${req.location.latitude?.toFixed(4)}, ${req.location.longitude?.toFixed(4)}`}
+                          </p>
+                        )}
                         <p className="text-xs text-gray-400 mt-1">📅 {new Date(req.createdAt).toLocaleDateString('en-IN')}</p>
                       </div>
                     </div>
+
                     <div className="flex flex-col items-end gap-2">
                       <span className={`text-xs px-3 py-1 rounded-full ${statusColors[req.status] || 'bg-gray-100 text-gray-600'}`}>
                         {req.status?.replace(/_/g, ' ')}
                       </span>
 
                       {req.totalPurchaseAmount > 0 && (
-                        <p className="text-sm font-bold text-green-700">₹{req.totalPurchaseAmount.toFixed(2)}</p>
+                        <div className="text-right bg-green-50 px-3 py-2 rounded-lg">
+                          <p className="text-sm font-bold text-green-700">₹{req.totalPurchaseAmount.toFixed(2)}</p>
+                          {req.offeredRatePerKg > 0 && <p className="text-xs text-gray-500">₹{req.offeredRatePerKg}/kg</p>}
+                        </div>
                       )}
 
                       {/* Manager actions */}
                       {isManager && (req.status === 'SUBMITTED' || req.status === 'UNDER_REVIEW') && (
                         <div className="flex gap-2">
-                          <button onClick={() => { setShowOfferModal(req.id); setOfferForm({ ratePerKg: '', totalAmount: '', suitability: 'SUITABLE' }); }}
-                            className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">💰 Offer</button>
+                          <button onClick={() => {
+                            setShowOfferModal(req.id);
+                            setOfferForm({ ratePerKg: '', totalAmount: '', suitability: 'SUITABLE' });
+                          }} className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">
+                            💰 Send Offer
+                          </button>
                           <button onClick={() => handleAction(`/biogas/manager/requests/${req.id}/reject`, '❌ Rejected')}
-                            className="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-200">✕ Reject</button>
+                            className="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-200">✕ Not Suitable</button>
                         </div>
                       )}
 
                       {isManager && req.status === 'FARMER_ACCEPTED' && (
                         <button onClick={() => handleAction(`/biogas/manager/requests/${req.id}/payment`, '💰 Payment completed')}
-                          className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">💰 Mark Payment</button>
+                          className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">💰 Complete Payment</button>
                       )}
 
                       {/* Farmer actions */}
                       {isFarmer && req.status === 'OFFER_SENT' && (
                         <div className="flex gap-2">
-                          <button onClick={() => handleAction(`/biogas/requests/${req.id}/accept`, '✅ Accepted!')}
+                          <button onClick={() => handleAction(`/biogas/requests/${req.id}/accept`, '✅ Offer accepted!')}
                             className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">✅ Accept</button>
                           <button onClick={() => handleAction(`/biogas/requests/${req.id}/reject`, '❌ Rejected')}
                             className="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-200">✕ Reject</button>
                         </div>
+                      )}
+
+                      {req.status === 'COMPLETED' && (
+                        <p className="text-xs text-green-700 font-bold">💰 ₹{req.totalPurchaseAmount?.toFixed(2)} Paid</p>
                       )}
                     </div>
                   </div>
@@ -237,12 +271,12 @@ export default function BiogasDashboard() {
         {/* Biogas Plant Locations */}
         {plants.length > 0 && (
           <div className="card">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">📍 Tamil Nadu Biogas Plants ({plants.length})</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">📍 Tamil Nadu Biogas Plants ({plants.length} Districts)</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
               {plants.map(p => (
                 <div key={p.id} className="p-3 bg-green-50 rounded-xl">
                   <p className="font-bold text-gray-900 text-sm">{p.name}</p>
-                  <p className="text-xs text-gray-500">{p.district}</p>
+                  <p className="text-xs text-gray-500">{p.district} District</p>
                   <p className="text-xs text-gray-400">{p.address}</p>
                   <p className="text-xs text-green-600 mt-1">📞 {p.contactNumber}</p>
                 </div>
@@ -260,6 +294,15 @@ export default function BiogasDashboard() {
               <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
                 className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">💰 Send Purchase Offer</h3>
+                {(() => {
+                  const req = requests.find(r => r.id === showOfferModal);
+                  return req ? (
+                    <div className="bg-gray-50 rounded-xl p-3 mb-4 text-sm">
+                      <p><strong>{req.wasteType}</strong> — {req.quantityKg} kg</p>
+                      <p className="text-gray-500">From: {req.farmerName}</p>
+                    </div>
+                  ) : null;
+                })()}
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-gray-700">Waste Suitability</label>
@@ -280,18 +323,51 @@ export default function BiogasDashboard() {
                       className="input-field mt-1" placeholder="5" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Total Amount (₹)</label>
+                    <label className="text-sm font-medium text-gray-700">Total Purchase Amount (₹)</label>
                     <input type="number" value={offerForm.totalAmount}
                       onChange={e => setOfferForm({ ...offerForm, totalAmount: e.target.value })}
                       className="input-field mt-1" />
                   </div>
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <button onClick={() => setShowOfferModal(null)} className="flex-1 py-2.5 border-2 border-gray-200 rounded-xl text-gray-600">Cancel</button>
+                  <button onClick={() => setShowOfferModal(null)} className="flex-1 py-2.5 border-2 border-gray-200 rounded-xl text-gray-600 font-medium">Cancel</button>
                   <button onClick={() => handleOffer(showOfferModal)} className="flex-1 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700">
                     💰 Send Offer
                   </button>
                 </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Farmer Profile Modal */}
+        <AnimatePresence>
+          {showProfile && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+              onClick={() => setShowProfile(null)}>
+              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+                className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">👨‍🌾 Farmer Profile</h3>
+                <div className="space-y-3">
+                  <div className="bg-green-50 rounded-xl p-4">
+                    <p className="text-[10px] uppercase text-green-400 font-bold">Farmer Name</p>
+                    <p className="font-bold text-gray-900 text-lg">{showProfile.farmerName}</p>
+                  </div>
+                  {requests.filter(r => r.farmerId === showProfile.farmerId).map(r => (
+                    <div key={r.id} className="bg-gray-50 rounded-xl p-3 flex items-center gap-3">
+                      {r.imageUrl && <img src={r.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />}
+                      <div>
+                        <p className="font-medium text-sm">{r.wasteType} — {r.quantityKg} kg</p>
+                        <p className="text-xs text-gray-400">{r.location?.address || 'Location available'}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ml-auto ${statusColors[r.status] || 'bg-gray-100'}`}>
+                        {r.status?.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setShowProfile(null)} className="w-full mt-4 py-2.5 border-2 border-gray-200 rounded-xl text-gray-600 font-medium">Close</button>
               </motion.div>
             </motion.div>
           )}
