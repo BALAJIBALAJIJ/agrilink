@@ -16,6 +16,7 @@ const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const AdminLoginPage = lazy(() => import('./pages/auth/AdminLoginPage'));
+const ManagerLoginPage = lazy(() => import('./pages/auth/ManagerLoginPage'));
 const ProfileCompletePage = lazy(() => import('./pages/auth/ProfileCompletePage'));
 const PendingApprovalPage = lazy(() => import('./pages/auth/PendingApprovalPage'));
 
@@ -74,6 +75,7 @@ function App() {
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<RegisterPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/manager/login/:type" element={<ManagerLoginPage />} />
           <Route path="/profile/complete" element={
             <ProtectedRoute><ProfileCompletePage /></ProtectedRoute>
           } />
