@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MongoIndexConfig {
 
     @Bean
+    @org.springframework.core.annotation.Order(1)
     CommandLineRunner fixMongoIndexes(MongoTemplate mongoTemplate) {
         return args -> {
             try {
@@ -30,7 +31,6 @@ public class MongoIndexConfig {
                     "users"
                 );
 
-                // Drop old indexes and let Spring recreate as sparse
                 try {
                     mongoTemplate.getCollection("users").dropIndex("email_1");
                     log.info("Dropped old email index");
@@ -38,6 +38,10 @@ public class MongoIndexConfig {
                 try {
                     mongoTemplate.getCollection("users").dropIndex("mobileNumber_1");
                     log.info("Dropped old mobileNumber index");
+                } catch (Exception e) { /* index may not exist */ }
+                try {
+                    mongoTemplate.getCollection("users").dropIndex("mobile_1");
+                    log.info("Dropped old mobile index");
                 } catch (Exception e) { /* index may not exist */ }
 
                 // Recreate as sparse unique

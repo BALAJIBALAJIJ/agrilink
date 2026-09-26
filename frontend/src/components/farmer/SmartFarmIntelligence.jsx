@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import GovernmentMarketPricesCard from './GovernmentMarketPricesCard';
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
@@ -219,30 +220,13 @@ export default function SmartFarmIntelligence({ farmLocation }) {
             </DataCard>
           </div>
 
-          {/* Row 2: Market + Groundwater */}
-          <div className="grid sm:grid-cols-2 gap-4 mb-4">
-            <DataCard title="Government Market Prices" icon="💹" status={market?.status} source={market?.source} retrievedAt={market?.retrievedAt}>
-              {md && md.markets && md.markets.length > 0 ? (
-                <div className="space-y-2 max-h-44 overflow-y-auto">
-                  {md.markets.slice(0, 5).map((m, i) => (
-                    <div key={i} className="bg-gray-50 rounded-lg p-2.5">
-                      <p className="text-xs font-semibold text-gray-900">{m.commodity} — {m.market}</p>
-                      <div className="flex gap-3 text-xs mt-1">
-                        <span className="text-green-600">Min ₹{m.minPrice}</span>
-                        <span className="text-blue-600 font-bold">Modal ₹{m.modalPrice}</span>
-                        <span className="text-red-600">Max ₹{m.maxPrice}</span>
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{m.date} • {m.district}, {m.state}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-400 text-sm">
-                  {market?.status === 'CONFIGURATION_REQUIRED' ? 'Market API key not configured (MARKET_API_KEY)' : 'No market data available'}
-                </p>
-              )}
-            </DataCard>
+          {/* Government Market Prices (Real MongoDB data with Table & Interactive Chart) */}
+          <div className="mb-4">
+            <GovernmentMarketPricesCard initialDistrict={user?.district || 'Erode'} />
+          </div>
 
+          {/* Groundwater Status */}
+          <div className="mb-4">
             <DataCard title="Groundwater Status" icon="💧" status={groundwater?.status} source={groundwater?.source} retrievedAt={groundwater?.retrievedAt}>
               <p className="text-gray-400 text-sm">
                 {groundwater?.data?.message || 'District-level groundwater data requires manual integration from CGWB/India-WRIS.'}

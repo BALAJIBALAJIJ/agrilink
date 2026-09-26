@@ -23,10 +23,39 @@ public class MarketDataService {
     @Value("${agrilink.market.api-key:}")
     private String apiKey;
 
-    private static final String MARKET_API_URL = "https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070";
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.agrilink.repository.MarketPriceRepository marketPriceRepository;
 
     public SmartFarmResponse getMarketPrices(String commodity, String state) {
         if (apiKey == null || apiKey.isBlank()) {
+            if (marketPriceRepository != null) {
+                String comm = (commodity != null && !commodity.isBlank()) ? commodity.trim() : "Tomato";
+                var saved = marketPriceRepository.findByDistrictRegexAndDate("Erode", java.time.LocalDate.now().toString());
+                if (saved.isEmpty()) {
+                    saved = marketPriceRepository.findByDistrictOrderByDateDescCommodityAsc("Erode");
+                }
+                if (!saved.isEmpty()) {
+                    List<Map<String, Object>> marketData = new ArrayList<>();
+                    for (com.agrilink.model.MarketPrice mp : saved) {
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("commodity", mp.getCommodity());
+                        item.put("market", mp.getMarket());
+                        item.put("district", mp.getDistrict());
+                        item.put("state", mp.getState() != null ? mp.getState() : "Tamil Nadu");
+                        item.put("minPrice", mp.getRetailPriceMin() != null ? mp.getRetailPriceMin() : mp.getPrice());
+                        item.put("maxPrice", mp.getRetailPriceMax() != null ? mp.getRetailPriceMax() : mp.getPrice());
+                        item.put("modalPrice", mp.getPrice());
+                        item.put("date", mp.getDate());
+                        marketData.add(item);
+                    }
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("commodity", comm);
+                    result.put("totalRecords", marketData.size());
+                    result.put("markets", marketData);
+                    return SmartFarmResponse.verified("AGMARKNET", result);
+                }
+            }
+
             return SmartFarmResponse.builder()
                     .source("AGMARKNET").status("CONFIGURATION_REQUIRED")
                     .retrievedAt(java.time.LocalDateTime.now())

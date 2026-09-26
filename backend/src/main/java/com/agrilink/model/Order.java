@@ -21,7 +21,7 @@ public class Order {
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, sparse = true)
     private String orderId; // Human-readable order ID like AGR-20240101-001
 
     @Indexed

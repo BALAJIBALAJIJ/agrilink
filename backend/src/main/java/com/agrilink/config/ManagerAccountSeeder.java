@@ -29,22 +29,27 @@ public class ManagerAccountSeeder implements CommandLineRunner {
     }
 
     private void seedManager(String prefix, String name, String mobile, String password, UserRole role) {
-        if (userRepository.findByMobileNumber(mobile).isEmpty()) {
-            User manager = User.builder()
-                    .fullName(name)
-                    .mobileNumber(mobile)
-                    .password(passwordEncoder.encode(password))
-                    .role(role)
-                    .verificationStatus(VerificationStatus.APPROVED)
-                    .profileCompleted(true)
-                    .passwordChangeRequired(false)
-                    .active(true)
-                    .preferredLanguage("en")
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-            userRepository.save(manager);
-            log.info("✅ {} account seeded — Mobile: {}, Password: {}", name, mobile, password);
+        try {
+            if (userRepository.findByMobileNumber(mobile).isEmpty()) {
+                User manager = User.builder()
+                        .fullName(name)
+                        .mobileNumber(mobile)
+                        .mobile(mobile)
+                        .password(passwordEncoder.encode(password))
+                        .role(role)
+                        .verificationStatus(VerificationStatus.APPROVED)
+                        .profileCompleted(true)
+                        .passwordChangeRequired(false)
+                        .active(true)
+                        .preferredLanguage("en")
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
+                userRepository.save(manager);
+                log.info("✅ {} account seeded — Mobile: {}, Password: {}", name, mobile, password);
+            }
+        } catch (Exception e) {
+            log.warn("Manager seeder notice for {}: {}", name, e.getMessage());
         }
     }
 }

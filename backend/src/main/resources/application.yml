@@ -68,6 +68,10 @@ agrilink:
   ai:
     api-key: ${AI_API_KEY:}
 
+market:
+  sync:
+    cron: ${MARKET_SYNC_CRON:0 0 6 * * *}
+
 logging:
   level:
     com.agrilink: DEBUG
