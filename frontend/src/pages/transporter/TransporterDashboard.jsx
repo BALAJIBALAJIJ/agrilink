@@ -19,6 +19,7 @@ export default function TransporterDashboard() {
   const [loading, setLoading] = useState(true);
   const [cashAmount, setCashAmount] = useState('');
   const [showCashModal, setShowCashModal] = useState(false);
+  const [expandedReq, setExpandedReq] = useState(null);
   const locationIntervalRef = useRef(null);
 
   useEffect(() => {
@@ -346,28 +347,109 @@ Status: ${delivery.status}
             </div>
           ) : (
             <div className="space-y-4">
-              {requests.map(req => (
-                <div key={req.id} className="p-5 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
+              {requests.map(req => {
+                const isExpanded = expandedReq === req.id;
+                const reqMapUrl = req.pickupLocation && req.deliveryLocation
+                  ? `https://www.openstreetmap.org/export/embed.html?bbox=${Math.min(req.pickupLocation.longitude, req.deliveryLocation.longitude)-0.03}%2C${Math.min(req.pickupLocation.latitude, req.deliveryLocation.latitude)-0.03}%2C${Math.max(req.pickupLocation.longitude, req.deliveryLocation.longitude)+0.03}%2C${Math.max(req.pickupLocation.latitude, req.deliveryLocation.latitude)+0.03}&layer=mapnik&marker=${req.pickupLocation.latitude}%2C${req.pickupLocation.longitude}`
+                  : null;
+                return (
+                <div key={req.id} className="bg-gray-50 rounded-xl overflow-hidden transition-all">
+                  {/* Summary Row */}
+                  <div className="p-5 flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900 text-lg">{req.productName}</h3>
-                      <p className="text-sm text-gray-500">{req.quantity} kg • ₹{req.productTotal?.toFixed(2) || '0'}</p>
-                      <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                        <div><span className="text-gray-400">From:</span> <strong>{req.farmerName}</strong> {req.farmerPhone && <span className="text-blue-500">📞 {req.farmerPhone}</span>}</div>
-                        <div><span className="text-gray-400">To:</span> <strong>{req.buyerName}</strong> {req.buyerPhone && <span className="text-purple-500">📞 {req.buyerPhone}</span>}</div>
-                      </div>
-                      <div className="flex gap-4 mt-2 text-sm">
+                      <p className="text-sm text-gray-500">{req.quantity} kg • {req.farmerName} → {req.buyerName}</p>
+                      <div className="flex gap-3 mt-2 text-sm flex-wrap">
                         {req.distance > 0 && <span className="text-blue-600">📍 {req.distance.toFixed(1)} km</span>}
                         {req.estimatedDuration > 0 && <span className="text-orange-600">⏱️ ~{Math.round(req.estimatedDuration)} min</span>}
                         <span className="text-green-600 font-medium">💰 Cash on Delivery</span>
                       </div>
                     </div>
-                    <button onClick={() => acceptRequest(req.id)} className="btn-primary !text-sm whitespace-nowrap">
-                      ✅ Accept
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setExpandedReq(isExpanded ? null : req.id)}
+                        className="text-sm px-4 py-2 border-2 border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-white transition-all">
+                        {isExpanded ? '▲ Hide' : '▼ Details'}
+                      </button>
+                      <button onClick={() => acceptRequest(req.id)} className="btn-primary !text-sm whitespace-nowrap">
+                        ✅ Accept
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="px-5 pb-5 border-t border-gray-200 pt-4">
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                        {/* Farmer Details */}
+                        <div className="bg-blue-50 rounded-xl p-4">
+                          <p className="text-[10px] uppercase text-blue-400 font-bold mb-2">👨‍🌾 FARMER (Pickup)</p>
+                          <p className="font-bold text-gray-900 text-base">{req.farmerName}</p>
+                          {req.farmerPhone && (
+                            <a href={`tel:${req.farmerPhone}`} className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1">
+                              📞 {req.farmerPhone}
+                            </a>
+                          )}
+                          {req.pickupLocation && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              <p>📍 {req.pickupLocation.latitude?.toFixed(4)}, {req.pickupLocation.longitude?.toFixed(4)}</p>
+                              {req.pickupLocation.address && <p className="mt-0.5">{req.pickupLocation.address}</p>}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Buyer Details */}
+                        <div className="bg-purple-50 rounded-xl p-4">
+                          <p className="text-[10px] uppercase text-purple-400 font-bold mb-2">🛒 BUYER (Delivery)</p>
+                          <p className="font-bold text-gray-900 text-base">{req.buyerName}</p>
+                          {req.buyerPhone && (
+                            <a href={`tel:${req.buyerPhone}`} className="text-sm text-purple-600 hover:underline flex items-center gap-1 mt-1">
+                              📞 {req.buyerPhone}
+                            </a>
+                          )}
+                          {req.deliveryLocation && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              <p>📍 {req.deliveryLocation.latitude?.toFixed(4)}, {req.deliveryLocation.longitude?.toFixed(4)}</p>
+                              {req.deliveryLocation.address && <p className="mt-0.5">{req.deliveryLocation.address}</p>}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Delivery Info */}
+                        <div className="bg-orange-50 rounded-xl p-4">
+                          <p className="text-[10px] uppercase text-orange-400 font-bold mb-2">📦 DELIVERY INFO</p>
+                          <div className="space-y-1.5 text-sm">
+                            <div className="flex justify-between"><span className="text-gray-500">Product</span><span className="font-bold">{req.productName}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Quantity</span><span className="font-bold">{req.quantity} kg</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-bold text-green-700">₹{req.productTotal?.toFixed(2) || '0.00'}</span></div>
+                            {req.distance > 0 && <div className="flex justify-between"><span className="text-gray-500">Distance</span><span className="font-bold">{req.distance.toFixed(1)} km</span></div>}
+                            {req.estimatedDuration > 0 && <div className="flex justify-between"><span className="text-gray-500">Est. Time</span><span className="font-bold">~{Math.round(req.estimatedDuration)} min</span></div>}
+                            <div className="flex justify-between"><span className="text-gray-500">Payment</span><span className="font-bold text-green-600">💰 COD</span></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Route Map */}
+                      {reqMapUrl && (
+                        <div className="rounded-xl overflow-hidden border border-gray-200">
+                          <iframe title="Route Preview" width="100%" height="200" style={{ border: 0 }} src={reqMapUrl} loading="lazy" />
+                          <div className="bg-gray-50 px-4 py-2 flex justify-between text-xs text-gray-500 flex-wrap gap-2">
+                            <span>🟢 Pickup: {req.pickupLocation?.latitude?.toFixed(4)}, {req.pickupLocation?.longitude?.toFixed(4)}</span>
+                            <span>🔴 Delivery: {req.deliveryLocation?.latitude?.toFixed(4)}, {req.deliveryLocation?.longitude?.toFixed(4)}</span>
+                          </div>
+                          {req.pickupLocation && req.deliveryLocation && (
+                            <a href={`https://www.google.com/maps/dir/${req.pickupLocation.latitude},${req.pickupLocation.longitude}/${req.deliveryLocation.latitude},${req.deliveryLocation.longitude}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="block text-center py-2.5 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-all">
+                              🗺️ View Route in Google Maps
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
