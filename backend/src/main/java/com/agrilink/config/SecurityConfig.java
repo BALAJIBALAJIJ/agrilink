@@ -66,10 +66,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/transporter/**").hasRole("TRANSPORTER")
 
                         // Dry Unit endpoints
-                        .requestMatchers("/api/dry-unit/manage/**").hasRole("DRY_UNIT_MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/dry-unit/units").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/dry-unit/nearest").permitAll()
+                        .requestMatchers("/api/dry-unit/manager/**").hasRole("DRY_UNIT_MANAGER")
+                        .requestMatchers("/api/dry-unit/**").authenticated()
 
                         // Biogas endpoints
-                        .requestMatchers("/api/biogas/manage/**").hasRole("BIOGAS_MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/biogas/plants").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/biogas/nearest").permitAll()
+                        .requestMatchers("/api/biogas/manager/**").hasRole("BIOGAS_MANAGER")
+                        .requestMatchers("/api/biogas/**").authenticated()
 
                         // Shared authenticated endpoints
                         .requestMatchers("/api/orders/**").authenticated()
